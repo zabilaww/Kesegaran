@@ -1,6 +1,6 @@
 import os
 import base64
-import cv2 as cv
+import cv2 
 import joblib
 import numpy as np
 
