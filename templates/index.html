@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FreshScan — Klasifikasi Kesegaran Ikan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+
+  <!-- DECORATIVE SHAPES -->
+  <div class="deco deco-blob-1"></div>
+  <div class="deco deco-blob-2"></div>
+  <div class="deco deco-dots"></div>
+  <div class="deco deco-ring"></div>
+
+  <div class="page-wrapper">
+
+    <!-- HEADER -->
+    <header class="header">
+      <div class="logo">
+        <div class="logo-badge">🐟</div>
+        <div class="logo-text-wrap">
+          <span class="logo-name">FreshScan</span>
+          <span class="logo-sub">AI Fish Freshness</span>
+        </div>
+      </div>
+      <nav class="header-tag">
+        <span class="tag tag-ai">MobileNetV3</span>
+        <span class="tag tag-ml">SVM</span>
+      </nav>
+    </header>
+
+    <!-- HERO STRIP -->
+    <div class="hero-strip">
+      <h1 class="hero-title">Deteksi Kesegaran<br /><em>Ikan</em> Secara Instan</h1>
+      <p class="hero-desc">Upload foto atau gunakan kamera — AI kami menganalisis dalam hitungan detik.</p>
+    </div>
+
+    <!-- MAIN LAYOUT -->
+    <div class="main-layout">
+
+      <!-- LEFT: UPLOAD / CAMERA -->
+      <section class="panel panel-input">
+        <div class="panel-header">
+          <span class="panel-num">01</span>
+          <h2 class="panel-title">Ambil / Unggah Gambar</h2>
+        </div>
+
+        <!-- SOURCE TOGGLE -->
+        <div class="source-toggle" role="group" aria-label="Pilih sumber gambar">
+          <button class="toggle-btn active" id="btnUpload" type="button" onclick="switchSource('upload')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Upload File
+          </button>
+          <button class="toggle-btn" id="btnCamera" type="button" onclick="switchSource('camera')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Kamera
+          </button>
+        </div>
+
+        <!-- UPLOAD PANEL -->
+        <div id="uploadPanel">
+          <form id="uploadForm" method="POST" enctype="multipart/form-data" action="/">
+            <input type="hidden" name="source" value="upload" />
+            <div class="drop-zone" id="dropZone">
+              <input type="file" name="fish" id="fishInput" accept=".jpg,.jpeg,.png,.webp" />
+              <div class="drop-content" id="dropContent">
+                <div class="drop-icon-wrap">
+                  <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="6" y="10" width="36" height="28" rx="4"/>
+                    <circle cx="24" cy="24" r="6"/>
+                    <path d="M18 10l2-4h8l2 4" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <p class="drop-main">Seret &amp; lepas gambar di sini</p>
+                <p class="drop-sub">atau <span class="link-text">pilih dari perangkat</span></p>
+                <div class="format-pills">
+                  <span>JPG</span><span>PNG</span><span>WEBP</span>
+                </div>
+              </div>
+              <div class="drop-preview" id="previewWrap" style="display:none">
+                <img id="previewImg" src="" alt="Preview" />
+                <button type="button" class="remove-btn" id="removeBtn" title="Hapus">✕</button>
+                <p class="preview-name" id="previewName"></p>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary" id="analyzeBtn">
+              <span class="btn-label">Analisis Sekarang</span>
+              <span class="btn-arrow">→</span>
+              <span class="btn-loading" id="btnLoading" style="display:none">
+                <span class="spin"></span> Memproses...
+              </span>
+            </button>
+          </form>
+        </div>
+
+        <!-- CAMERA PANEL -->
+        <div id="cameraPanel" style="display:none">
+          <form id="cameraForm" method="POST" enctype="multipart/form-data" action="/">
+            <input type="hidden" name="source" value="camera" />
+            <input type="hidden" name="camera_data" id="cameraDataInput" />
+            <div class="camera-wrap" id="cameraWrap">
+              <video id="videoEl" autoplay playsinline muted></video>
+              <div class="cam-overlay">
+                <div class="cam-corner tl"></div>
+                <div class="cam-corner tr"></div>
+                <div class="cam-corner bl"></div>
+                <div class="cam-corner br"></div>
+              </div>
+              <canvas id="snapCanvas" style="display:none"></canvas>
+            </div>
+            <div class="cam-snapshot-wrap" id="snapshotWrap" style="display:none">
+              <img id="snapshotImg" src="" alt="Foto" />
+              <button type="button" class="btn-outline btn-sm" id="retakeBtn">↩ Foto Ulang</button>
+            </div>
+            <div class="cam-controls">
+              <button type="button" class="btn-cam" id="snapBtn" title="Ambil foto">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/></svg>
+                Ambil Foto
+              </button>
+              <button type="button" class="btn-flip" id="flipBtn" title="Balik kamera">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M20 7H8a4 4 0 00-4 4v1" stroke-linecap="round"/>
+                  <path d="M8 21l-4-4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M4 17h12a4 4 0 004-4v-1" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <button type="submit" class="btn-primary btn-cam-analyze" id="camAnalyzeBtn" style="display:none">
+                <span class="btn-label">Analisis Foto</span>
+                <span class="btn-arrow">→</span>
+                <span class="btn-loading" id="camBtnLoading" style="display:none"><span class="spin"></span></span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- HOW IT WORKS (compact) -->
+        <div class="steps-compact">
+          <div class="step-c"><span class="step-c-num">1</span><span>Upload / Foto</span></div>
+          <div class="step-c-arrow">›</div>
+          <div class="step-c"><span class="step-c-num">2</span><span>Ekstraksi Fitur</span></div>
+          <div class="step-c-arrow">›</div>
+          <div class="step-c"><span class="step-c-num">3</span><span>SVM Klasifikasi</span></div>
+          <div class="step-c-arrow">›</div>
+          <div class="step-c"><span class="step-c-num">4</span><span>Hasil Prediksi</span></div>
+        </div>
+      </section>
+
+      <!-- RIGHT: RESULT -->
+      <section class="panel panel-result">
+        <div class="panel-header">
+          <span class="panel-num">02</span>
+          <h2 class="panel-title">Hasil Analisis</h2>
+        </div>
+
+        {% if result %}
+
+          {% if result == "SEGAR" %}
+          <div class="result-card result-fresh animate-in">
+            <div class="result-icon-big">🐟</div>
+            <div class="result-badge badge-fresh">SEGAR</div>
+            <h3 class="result-heading">Ikan Segar!</h3>
+            <p class="result-body">Ikan ini terdeteksi dalam kondisi <strong>segar</strong> dan layak dikonsumsi.</p>
+            <div class="conf-section">
+              <div class="conf-top">
+                <span class="conf-label">Tingkat Kepercayaan</span>
+                <span class="conf-val">{{ confidence }}%</span>
+              </div>
+              <div class="conf-track">
+                <div class="conf-fill fresh-fill" style="--w: {{ confidence }}%"></div>
+              </div>
+            </div>
+          </div>
+
+          {% elif result == "TIDAK_SEGAR" %}
+          <div class="result-card result-stale animate-in">
+            <div class="result-icon-big">⚠️</div>
+            <div class="result-badge badge-stale">TIDAK SEGAR</div>
+            <h3 class="result-heading">Ikan Tidak Segar</h3>
+            <p class="result-body">Ikan ini terdeteksi <strong>tidak segar</strong>. Tidak disarankan untuk dikonsumsi.</p>
+            <div class="conf-section">
+              <div class="conf-top">
+                <span class="conf-label">Tingkat Kepercayaan</span>
+                <span class="conf-val">{{ confidence }}%</span>
+              </div>
+              <div class="conf-track">
+                <div class="conf-fill stale-fill" style="--w: {{ confidence }}%"></div>
+              </div>
+            </div>
+          </div>
+
+          {% elif result == "BUKAN_IKAN" %}
+          <div class="result-card result-unknown animate-in">
+            <div class="result-icon-big">🔍</div>
+            <div class="result-badge badge-unknown">BUKAN IKAN</div>
+            <h3 class="result-heading">Tidak Dikenali</h3>
+            <p class="result-body">Gambar tidak terdeteksi sebagai ikan. Coba gambar ikan yang lebih jelas.</p>
+            <div class="conf-section">
+              <div class="conf-top">
+                <span class="conf-label">Skor Kepercayaan</span>
+                <span class="conf-val">{{ confidence }}%</span>
+              </div>
+              <div class="conf-track">
+                <div class="conf-fill unknown-fill" style="--w: {{ confidence }}%"></div>
+              </div>
+            </div>
+          </div>
+
+          {% elif result == "ERROR" %}
+          <div class="result-card result-error animate-in">
+            <div class="result-icon-big">❌</div>
+            <div class="result-badge badge-error">ERROR</div>
+            <h3 class="result-heading">Terjadi Kesalahan</h3>
+            <p class="result-body">{{ error_message }}</p>
+          </div>
+          {% endif %}
+
+          {% if uploaded_image %}
+          <div class="analyzed-thumb">
+            <p class="thumb-label">Gambar Dianalisis</p>
+            <img src="{{ url_for('static', filename=uploaded_image) }}" alt="Ikan" />
+          </div>
+          {% endif %}
+
+        {% else %}
+        <div class="result-empty">
+          <div class="empty-fish">🐠</div>
+          <p class="empty-title">Hasil akan muncul di sini</p>
+          <p class="empty-sub">Unggah atau foto ikan untuk memulai analisis AI</p>
+          <div class="empty-features">
+            <div class="ef-item"><span class="ef-dot fresh-dot"></span>Segar</div>
+            <div class="ef-item"><span class="ef-dot stale-dot"></span>Tidak Segar</div>
+            <div class="ef-item"><span class="ef-dot unknown-dot"></span>Bukan Ikan</div>
+          </div>
+        </div>
+        {% endif %}
+
+      </section>
+
+    </div><!-- end main-layout -->
+
+    <footer class="footer">
+      <p>FreshScan &copy; 2025 &mdash; Klasifikasi Kesegaran Ikan dengan Deep Learning</p>
+    </footer>
+
+  </div>
+
+  <script>
+    /* ===================== UPLOAD ===================== */
+    const fishInput   = document.getElementById('fishInput');
+    const dropZone    = document.getElementById('dropZone');
+    const dropContent = document.getElementById('dropContent');
+    const previewWrap = document.getElementById('previewWrap');
+    const previewImg  = document.getElementById('previewImg');
+    const previewName = document.getElementById('previewName');
+    const removeBtn   = document.getElementById('removeBtn');
+    const uploadForm  = document.getElementById('uploadForm');
+    const analyzeBtn  = document.getElementById('analyzeBtn');
+    const btnLoading  = document.getElementById('btnLoading');
+
+    function showPreview(file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        previewImg.src = e.target.result;
+        previewName.textContent = file.name;
+        dropContent.style.display = 'none';
+        previewWrap.style.display = 'flex';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    fishInput.addEventListener('change', e => { if (e.target.files[0]) showPreview(e.target.files[0]); });
+
+    removeBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      fishInput.value = '';
+      previewWrap.style.display = 'none';
+      dropContent.style.display = 'flex';
+    });
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault(); dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) { const dt = new DataTransfer(); dt.items.add(file); fishInput.files = dt.files; showPreview(file); }
+    });
+
+    dropZone.addEventListener('click', e => {
+      if (!removeBtn.contains(e.target)) fishInput.click();
+    });
+
+    uploadForm && uploadForm.addEventListener('submit', () => {
+      analyzeBtn.querySelector('.btn-label').style.display = 'none';
+      analyzeBtn.querySelector('.btn-arrow').style.display = 'none';
+      btnLoading.style.display = 'flex';
+      analyzeBtn.disabled = true;
+    });
+
+    /* ===================== SOURCE TOGGLE ===================== */
+    function switchSource(src) {
+      document.getElementById('uploadPanel').style.display = src === 'upload' ? 'block' : 'none';
+      document.getElementById('cameraPanel').style.display = src === 'camera' ? 'block' : 'none';
+      document.getElementById('btnUpload').classList.toggle('active', src === 'upload');
+      document.getElementById('btnCamera').classList.toggle('active', src === 'camera');
+      if (src === 'camera') startCamera();
+      else stopCamera();
+    }
+
+    /* ===================== CAMERA ===================== */
+    let stream = null;
+    let facingMode = 'environment';
+    const videoEl    = document.getElementById('videoEl');
+    const snapCanvas = document.getElementById('snapCanvas');
+    const snapBtn    = document.getElementById('snapBtn');
+    const flipBtn    = document.getElementById('flipBtn');
+    const retakeBtn  = document.getElementById('retakeBtn');
+    const snapshotWrap = document.getElementById('snapshotWrap');
+    const snapshotImg  = document.getElementById('snapshotImg');
+    const camWrap      = document.getElementById('cameraWrap');
+    const camDataInput = document.getElementById('cameraDataInput');
+    const camAnalyzeBtn = document.getElementById('camAnalyzeBtn');
+    const camBtnLoading = document.getElementById('camBtnLoading');
+    const cameraForm = document.getElementById('cameraForm');
+
+    async function startCamera() {
+      try {
+        if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode, width: { ideal: 1080 }, height: { ideal: 1080 } },
+          audio: false
+        });
+        videoEl.srcObject = stream;
+        videoEl.style.transform = facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+        /* Wait for video dimensions to be known before showing */
+        await new Promise(resolve => {
+          if (videoEl.readyState >= 1) { resolve(); return; }
+          videoEl.addEventListener('loadedmetadata', resolve, { once: true });
+        });
+        camWrap.style.display = 'block';
+        snapshotWrap.style.display = 'none';
+        camAnalyzeBtn.style.display = 'none';
+        snapBtn.style.display = 'flex';
+        flipBtn.style.display = 'flex';
+      } catch (err) {
+        alert('Kamera tidak dapat diakses: ' + err.message);
+      }
+    }
+
+    function stopCamera() {
+      if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+    }
+
+    flipBtn.addEventListener('click', async () => {
+      facingMode = facingMode === 'environment' ? 'user' : 'environment';
+      flipBtn.classList.add('flipping');
+      setTimeout(() => flipBtn.classList.remove('flipping'), 400);
+      await startCamera();
+    });
+
+    snapBtn.addEventListener('click', () => {
+      const vw = videoEl.videoWidth;
+      const vh = videoEl.videoHeight;
+      const size = Math.min(vw, vh);
+      const sx = Math.floor((vw - size) / 2);
+      const sy = Math.floor((vh - size) / 2);
+      snapCanvas.width  = size;
+      snapCanvas.height = size;
+      const ctx = snapCanvas.getContext('2d');
+      /* Un-mirror when saving so the stored image is not flipped */
+      if (facingMode === 'user') {
+        ctx.translate(size, 0);
+        ctx.scale(-1, 1);
+      }
+      ctx.drawImage(videoEl, sx, sy, size, size, 0, 0, size, size);
+      const dataURL = snapCanvas.toDataURL('image/jpeg', 0.9);
+      snapshotImg.src = dataURL;
+      camDataInput.value = dataURL;
+      camWrap.style.display = 'none';
+      snapshotWrap.style.display = 'block';
+      camAnalyzeBtn.style.display = 'flex';
+      snapBtn.style.display = 'none';
+      flipBtn.style.display = 'none';
+    });
+
+    retakeBtn.addEventListener('click', () => {
+      snapshotWrap.style.display = 'none';
+      camWrap.style.display = 'block';
+      camAnalyzeBtn.style.display = 'none';
+      snapBtn.style.display = 'flex';
+      flipBtn.style.display = 'flex';
+      camDataInput.value = '';
+    });
+
+    cameraForm && cameraForm.addEventListener('submit', e => {
+      if (!camDataInput.value) { e.preventDefault(); alert('Ambil foto terlebih dahulu!'); return; }
+      camAnalyzeBtn.querySelector('.btn-label').style.display = 'none';
+      camAnalyzeBtn.querySelector('.btn-arrow').style.display = 'none';
+      camBtnLoading.style.display = 'inline-flex';
+      camAnalyzeBtn.disabled = true;
+    });
+
+    /* ===================== ANIMATE RESULT ===================== */
+    window.addEventListener('load', () => {
+      const panel = document.querySelector('.result-card');
+      if (panel) panel.classList.add('animate-in');
+    });
+  </script>
+</body>
+</html>
